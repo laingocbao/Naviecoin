@@ -73,7 +73,6 @@ const generateNextBlock = (blockData) => {
     const nextIndex = previousBlock.index + 1;
     const nextTimestamp = getCurrentTimestamp();
     const newBlock = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
-    newBlock.constructor(nextIndex, nextHash, previousBlock.hash, nextTimestamp, blockData, 0, 0);
     return newBlock;
 };
 
@@ -82,7 +81,9 @@ const findBlock = (index, previousHash, timestamp, data, difficulty) => {
     while (true) {
         const hash = calculateHash(index, previousHash, timestamp, data, difficulty, nonce);
         if (hashMatchesDifficulty(hash, difficulty)) {
-            return new Block(index, hash, previousHash, timestamp, data, difficulty, nonce);
+            var newBlock = new Block();
+            newBlock.constructor(index, hash, previousHash, timestamp, data, difficulty, nonce);
+            return newBlock;
         }
         nonce++;
     }
@@ -94,10 +95,12 @@ const calculateHashForBlock = (block) =>
 const calculateHash = (index, previousHash, timestamp, data, difficulty, nonce) =>
     SHA256(index + previousHash + timestamp + data + difficulty + nonce).toString();
 
-const addBlock = (newBlock) => {
+const addBlockToChain = (newBlock) => {
     if (isValidNewBlock(newBlock, getLatestBlock())) {
         blockchain.push(newBlock);
+        return true;
     }
+    return false;
 };
 
 const isValidBlockStructure = (block) => {
@@ -128,6 +131,7 @@ const isValidNewBlock = (newBlock, previousBlock) => {
     }
     return true;
 };
+
 const getAccumulatedDifficulty = (aBlockchain) => {
     return aBlockchain
         .map((block) => block.difficulty)
@@ -141,7 +145,6 @@ const isValidTimestamp = (newBlock, previousBlock) => {
 };
 
 const hasValidHash = (block) => {
-
     if (!hashMatchesBlockContent(block)) {
         console.log('invalid hash, got:' + block.hash);
         return false;
@@ -181,14 +184,6 @@ const isValidChain = (blockchainToValidate) => {
     return true;
 };
 
-const addBlockToChain = (newBlock) => {
-    if (isValidNewBlock(newBlock, getLatestBlock())) {
-        blockchain.push(newBlock);
-        return true;
-    }
-    return false;
-};
-
 const replaceChain = (newBlocks) => {
     if (isValidChain(newBlocks) &&
         getAccumulatedDifficulty(newBlocks) > getAccumulatedDifficulty(getBlockchain())) {
@@ -199,8 +194,6 @@ const replaceChain = (newBlocks) => {
         console.log('Received blockchain invalid');
     }
 };
-
-// Chapter 2
 
 // export {Block, getBlockchain, getLatestBlock, generateNextBlock, isValidBlockStructure, replaceChain, addBlockToChain};
 var exports = module.exports = {Block, getBlockchain, getLatestBlock, generateNextBlock, isValidBlockStructure, replaceChain, addBlockToChain};

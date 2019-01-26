@@ -16,4 +16,4 @@ const hexToBinary = (s) => {
     return ret;
 };
 
-export {hexToBinary};
+var exports = module.exports = {hexToBinary};
