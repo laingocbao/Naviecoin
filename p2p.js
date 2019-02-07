@@ -1,6 +1,7 @@
+const _ = require('underscore'); //underscore provides extend() for shallow extend
 const WebSocket = require('ws');
 const Server = require('ws').Server;
-var {addBlockToChain, Block, getBlockchain, getLatestBlock, isValidBlockStructure, replaceChain} = require('./blockchain');
+const {addBlockToChain, Block, getBlockchain, getLatestBlock, isValidBlockStructure, replaceChain} = require('./blockchain');
 
 const sockets = [];
 
@@ -82,7 +83,7 @@ const responseChainMsg = () => ({
 
 const responseLatestMsg = () => ({
     'type': MessageType.RESPONSE_BLOCKCHAIN,
-    'data': JSON.stringify([getLatestBlock()])
+    'data': JSON.stringify([getLatestBlock()]),
 });
 
 const initErrorHandler = (ws) => {

@@ -1,5 +1,6 @@
+const _ = require('underscore'); //underscore provides extend() for shallow extend
 const SHA256 = require('crypto-js/sha256');
-const {broadcastLatest} = require('./p2p');
+const {UnspentTxOut, Transaction, processTransactions} = require('./transaction');
 const {hexToBinary} = require('./util');
 
 function Block(){
@@ -8,7 +9,7 @@ function Block(){
     this.hash = "";
     this.previousHash = "";
     this.timestamp = 0;
-    this.data = "";    
+    this.data = [];    
     this.difficulty = 0;
     this.nonce = 0;
 
@@ -27,15 +28,18 @@ Block.prototype.constructor = function(index, hash, previousHash, timestamp, dat
 
 const genesisBlock = new Block();
 genesisBlock.constructor(
-    0, '816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7', null, 1465154705, 'my genesis block!!', 0, 0
+    0, '816534932c2b7154836da6afc367695e6337db8a921823784c14378abed4f7d7', null, 1465154705, [], 0, 0
 );
 
 const blockchain = [];
 blockchain.push(genesisBlock);
 
+let unspentTxOuts = [];
+
 const getBlockchain = () => blockchain;
 
 const getLatestBlock = () => blockchain[blockchain.length - 1];
+
 // in seconds
 const BLOCK_GENERATION_INTERVAL = 10;
 
@@ -73,7 +77,12 @@ const generateNextBlock = (blockData) => {
     const nextIndex = previousBlock.index + 1;
     const nextTimestamp = getCurrentTimestamp();
     const newBlock = findBlock(nextIndex, previousBlock.hash, nextTimestamp, blockData, difficulty);
-    return newBlock;
+    
+    if(addBlockToChain(newBlock)) {
+        return newBlock;
+    } else {
+        return null;
+    }
 };
 
 const findBlock = (index, previousHash, timestamp, data, difficulty) => {
@@ -95,14 +104,6 @@ const calculateHashForBlock = (block) =>
 const calculateHash = (index, previousHash, timestamp, data, difficulty, nonce) =>
     SHA256(index + previousHash + timestamp + data + difficulty + nonce).toString();
 
-const addBlockToChain = (newBlock) => {
-    if (isValidNewBlock(newBlock, getLatestBlock())) {
-        blockchain.push(newBlock);
-        return true;
-    }
-    return false;
-};
-
 const isValidBlockStructure = (block) => {
     // console.log(typeof block.index);
     // console.log(typeof block.hash);
@@ -113,10 +114,16 @@ const isValidBlockStructure = (block) => {
         && typeof block.hash === 'string'
         && (typeof block.previousHash === 'string' || typeof block.previousHash === 'object')
         && typeof block.timestamp === 'number'
-        && typeof block.data === 'string';
+        && typeof block.data === 'object';
 };
 
 const isValidNewBlock = (newBlock, previousBlock) => {
+    if (!isValidBlockStructure(newBlock)) {
+        console.log('invalid block structure');
+        console.log(newBlock)
+        return false;
+    }
+
     if (previousBlock.index + 1 !== newBlock.index) {
         console.log('invalid index');
         return false;
@@ -182,6 +189,20 @@ const isValidChain = (blockchainToValidate) => {
         }
     }
     return true;
+};
+
+const addBlockToChain = (newBlock) => {
+    if (isValidNewBlock(newBlock, getLatestBlock())) {
+        const retVal = processTransactions(newBlock.data, unspentTxOuts, newBlock.index);
+        if (retVal === null) {
+            return false;
+        } else {
+            blockchain.push(newBlock);
+            unspentTxOuts = retVal;
+            return true;
+        }
+    }
+    return false;
 };
 
 const replaceChain = (newBlocks) => {
