@@ -61,7 +61,7 @@ const initMessageHandler = (ws) => {
                 const receivedBlocks = JSONToObject(message.data);
                 if (receivedBlocks === null) {
                     console.log('invalid blocks received:');
-                    console.log(message.data)
+                    console.log(message.data);
                     break;
                 }
                 handleBlockchainResponse(receivedBlocks);

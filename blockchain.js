@@ -1,7 +1,9 @@
 const _ = require('underscore'); //underscore provides extend() for shallow extend
 const SHA256 = require('crypto-js/sha256');
-const {UnspentTxOut, Transaction, processTransactions} = require('./transaction');
+const {getCoinbaseTransaction, isValidAddress, processTransactions, Transaction, UnspentTxOut,
+    createTransaction, getBalance, getPrivateFromWallet, getPublicFromWallet} = require('./transaction');
 const {hexToBinary} = require('./util');
+// const {createTransaction, getBalance, getPrivateFromWallet, getPublicFromWallet} = reuqire('./wallet');
 
 function Block(){
 
@@ -70,7 +72,7 @@ const getAdjustedDifficulty = (latestBlock, aBlockchain) => {
 
 const getCurrentTimestamp = () => Math.round(new Date().getTime() / 1000);
 
-const generateNextBlock = (blockData) => {
+const generateRawNextBlock  = (blockData) => {
     const previousBlock = getLatestBlock();
     const difficulty = getDifficulty(getBlockchain());
     console.log('difficulty: ' + difficulty);
@@ -85,6 +87,25 @@ const generateNextBlock = (blockData) => {
     }
 };
 
+const generateNextBlock = () => {
+    const coinbaseTx = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+    const blockData = [coinbaseTx];
+    return generateRawNextBlock(blockData);
+};
+
+const generatenextBlockWithTransaction = (receiverAddress, amount) => {
+    if (!isValidAddress(receiverAddress)) {
+        throw Error('invalid address');
+    }
+    if (typeof amount !== 'number') {
+        throw Error('invalid amount');
+    }
+    const coinbaseTx = getCoinbaseTransaction(getPublicFromWallet(), getLatestBlock().index + 1);
+    const tx = createTransaction(receiverAddress, amount, getPrivateFromWallet(), unspentTxOuts);
+    const blockData = [coinbaseTx, tx];
+    return generateRawNextBlock(blockData);
+};
+
 const findBlock = (index, previousHash, timestamp, data, difficulty) => {
     let nonce = 0;
     while (true) {
@@ -96,6 +117,10 @@ const findBlock = (index, previousHash, timestamp, data, difficulty) => {
         }
         nonce++;
     }
+};
+
+const getAccountBalance = () => {
+    return getBalance(getPublicFromWallet(), unspentTxOuts);
 };
 
 const calculateHashForBlock = (block) =>
@@ -217,4 +242,6 @@ const replaceChain = (newBlocks) => {
 };
 
 // export {Block, getBlockchain, getLatestBlock, generateNextBlock, isValidBlockStructure, replaceChain, addBlockToChain};
-var exports = module.exports = {Block, getBlockchain, getLatestBlock, generateNextBlock, isValidBlockStructure, replaceChain, addBlockToChain};
+var exports = module.exports = {    Block, getBlockchain, getLatestBlock,
+                                    generateRawNextBlock, generateNextBlock, generatenextBlockWithTransaction,
+                                    getAccountBalance, isValidBlockStructure, replaceChain, addBlockToChain};
