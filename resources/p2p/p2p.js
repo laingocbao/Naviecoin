@@ -1,10 +1,11 @@
+'use strict'
 const _ = require('underscore'); //underscore provides extend() for shallow extend
 const WebSocket = require('ws');
 const Server = require('ws').Server;
 const {addBlockToChain, Block, getBlockchain, getLatestBlock, handleReceivedTransaction, isValidBlockStructure,
-        replaceChain} = require('./blockchain');
-const {Transaction} = require('./transaction');
-const {getTransactionPool} = require('./transactionPool');
+        replaceChain} = require('../blockchain/blockchain');
+const {Transaction} = require('../currency/transaction');
+const {getTransactionPool} = require('../currency/transaction_pool');
 
 const sockets = [];
 
@@ -105,29 +106,6 @@ const initMessageHandler = (ws) => {
 
 const write = (ws, message) => ws.send(JSON.stringify(message));
 const broadcast = (message) => sockets.forEach((socket) => write(socket, message));
-
-const queryChainLengthMsg = () => ({'type': MessageType.QUERY_LATEST, 'data': null});
-
-const queryAllMsg = () => ({'type': MessageType.QUERY_ALL, 'data': null});
-
-const responseChainMsg = () => ({
-    'type': MessageType.RESPONSE_BLOCKCHAIN, 'data': JSON.stringify(getBlockchain())
-});
-
-const responseLatestMsg = () => ({
-    'type': MessageType.RESPONSE_BLOCKCHAIN,
-    'data': JSON.stringify([getLatestBlock()]),
-});
-
-const queryTransactionPoolMsg = () => ({
-    'type': MessageType.QUERY_TRANSACTION_POOL,
-    'data': null
-});
-
-const responseTransactionPoolMsg = () => ({
-    'type': MessageType.RESPONSE_TRANSACTION_POOL,
-    'data': JSON.stringify(getTransactionPool())
-});
 
 const initErrorHandler = (ws) => {
     const closeConnection = (myWs) => {
