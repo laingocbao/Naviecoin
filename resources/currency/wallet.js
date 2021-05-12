@@ -1,19 +1,20 @@
 'use strict'
 const {ec} = require('elliptic');
-const {existsSync, readFileSync, unlinkSync, writeFileSync} = require('fs');
+const path = require('path');
+const fs = require('fs');
 const _ = require('lodash');
 const {getPublicKey, getTransactionId, signTxIn, Transaction, TxIn, TxOut, UnspentTxOut} = require('./transaction');
 
 const EC = new ec('secp256k1');
-const privateKeyLocation = process.env.PRIVATE_KEY || 'node/wallet/private_key';
+const privateKeyLocation = path.join(__dirname, '../../private_key.txt');
 
-exports.getPrivateFromWallet = () => {
-    const buffer = readFileSync(privateKeyLocation, 'utf8');
+const getPrivateKeyFromMyWallet = () => {
+    const buffer = fs.readFileSync(privateKeyLocation, 'utf8');
     return buffer.toString();
 };
 
-exports.getPublicFromWallet = () => {
-    const privateKey = getPrivateFromWallet();
+const getPublicKeyFromMyWallet = () => {
+    const privateKey = getPrivateKeyFromMyWallet();
     const key = EC.keyFromPrivate(privateKey, 'hex');
     return key.getPublic().encode('hex');
 };
@@ -133,6 +134,7 @@ exports.createTransaction = (receiverAddress, amount, privateKey,
     return tx;
 };
 
+module.exports = {getPublicKeyFromMyWallet, }
 // const privateKeyLocation = process.env.PRIVATE_KEY || 'node/wallet/private_key';
 //
 // exports.getPrivateFromWallet = () => {

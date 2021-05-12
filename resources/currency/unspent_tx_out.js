@@ -1,4 +1,5 @@
 'use strict'
+const _ = require('lodash');
 
 // the unspent txOut of genesis block is set to unspentTxOuts on startup
 let unspentTxOuts = this.processTransactions(blockchain[0].data, [], 0);

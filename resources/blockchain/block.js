@@ -1,6 +1,6 @@
 'use strict'
 
-exports.Block = () => {
+function Block() {
     this.index = 0;
     this.hash = "";
     this.previousHash = "";
@@ -21,3 +21,4 @@ Block.prototype.constructor = function(index, hash, previousHash, timestamp, dat
     this.difficulty = difficulty;
     this.nonce = nonce;
 }
+module.exports = Block;

@@ -4,6 +4,28 @@ const transaction = require('./currency/transaction');
 const transactionPool = require('./currency/transaction_pool');
 
 module.exports.setupRouters = function (server) {
+
+    server.post('/transaction/mine_block_by_transaction_pool', (req, res) => {
+        const newBlock = transactionPool.generateNextBlockByTransactionPool();
+        if (newBlock === null) {
+            res.send(404, 'could not generate block');
+        } else {
+            res.send(newBlock);
+        }
+    });
+
+    server.post('/blockchain/mine_transaction', (req, res) => {
+        const address = req.body.address;
+        const amount = req.body.amount;
+        try {
+            const resp = blockchain.generateNextBlockWithTransaction(address, amount);
+            res.send(resp);
+        } catch (e) {
+            console.log(e.message);
+            res.send(404, e.message);
+        }
+    });
+
     server.get('/transaction/unspent_transaction_outputs', (req, res, next) => {
         res.send(blockchain.getUnspentTxOuts());
     })

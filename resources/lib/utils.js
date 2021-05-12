@@ -1,7 +1,8 @@
 'use strict'
 const SHA256 = require('crypto-js/sha256');
+const math = require('./math');
 
-exports.hexToBinary = (s) => {
+const hexToBinary = (s) => {
     let ret = '';
     const lookupTable = {
         '0': '0000', '1': '0001', '2': '0010', '3': '0011', '4': '0100',
@@ -20,13 +21,13 @@ exports.hexToBinary = (s) => {
 };
 
 
-exports.toHexString = (byteArray) => {
+const toHexString = (byteArray) => {
     return Array.from(byteArray, (byte) => {
         return ('0' + (byte & 0xFF).toString(16)).slice(-2);
     }).join('');
 };
 
-exports.getPublicKey = (aPrivateKey) => {
+const getPublicKey = (aPrivateKey) => {
     return ec.keyFromPrivate(aPrivateKey, 'hex').getPublic().encode('hex');
 };
 
@@ -34,7 +35,7 @@ exports.getPublicKey = (aPrivateKey) => {
 /**
  BLOCKCHAIN
  */
-exports.isValidBlockStructure = (block) => {
+const isValidBlockStructure = (block) => {
     // console.log(typeof block.index);
     // console.log(typeof block.hash);
     // console.log(typeof block.previousHash);
@@ -44,10 +45,10 @@ exports.isValidBlockStructure = (block) => {
         && typeof block.hash === 'string'
         && (typeof block.previousHash === 'string' || typeof block.previousHash === 'object')
         && typeof block.timestamp === 'number'
-        && typeof block.data === 'object';
+        && block.data;
 };
 
-exports.isValidNewBlock = (newBlock, previousBlock) => {
+const isValidNewBlock = (newBlock, previousBlock) => {
     if (!isValidBlockStructure(newBlock)) {
         console.log('invalid block structure: %s', JSON.stringify(newBlock));
         return false;
@@ -68,19 +69,19 @@ exports.isValidNewBlock = (newBlock, previousBlock) => {
     return true;
 };
 
-exports.getAccumulatedDifficulty = (aBlockchain) => {
+const getAccumulatedDifficulty = (aBlockchain) => {
     return aBlockchain
         .map((block) => block.difficulty)
         .map((difficulty) => Math.pow(2, difficulty))
         .reduce((a, b) => a + b);
 };
 
-exports.isValidTimestamp = (newBlock, previousBlock) => {
+const isValidTimestamp = (newBlock, previousBlock) => {
     return ( previousBlock.timestamp - 60 < newBlock.timestamp )
         && newBlock.timestamp - 60 < getCurrentTimestamp();
 };
 
-exports.hasValidHash = (block) => {
+const hasValidHash = (block) => {
     if (!hashMatchesBlockContent(block)) {
         console.log('invalid hash, got:' + block.hash);
         return false;
@@ -92,12 +93,12 @@ exports.hasValidHash = (block) => {
     return true;
 };
 
-exports.hashMatchesBlockContent = (block) => {
-    const blockHash = calculateHashForBlock(block);
+const hashMatchesBlockContent = (block) => {
+    const blockHash = math.calculateHashForBlock(block);
     return blockHash === block.hash;
 };
 
-exports.hashMatchesDifficulty = (hash, difficulty) => {
+const hashMatchesDifficulty = (hash, difficulty) => {
     const hashInBinary = hexToBinary(hash);
     const requiredPrefix = '0'.repeat(difficulty);
     return hashInBinary.startsWith(requiredPrefix);
@@ -106,7 +107,7 @@ exports.hashMatchesDifficulty = (hash, difficulty) => {
 /*
     Checks if the given blockchain is valid. Return the unspent txOuts if the chain is valid
  */
-exports.isValidChain = (blockchainToValidate) => {
+const isValidChain = (blockchainToValidate) => {
     console.log('isValidChain:');
     console.log(JSON.stringify(blockchainToValidate));
     const isValidGenesis = (block) => {
@@ -138,11 +139,12 @@ exports.isValidChain = (blockchainToValidate) => {
     return aUnspentTxOuts;
 };
 
+const getCurrentTimestamp = () => Math.round(new Date().getTime() / 1000);
 
 /**
  TRANSACTION
  */
-exports.validateTransaction = (transaction, aUnspentTxOuts) => {
+const validateTransaction = (transaction, aUnspentTxOuts) => {
     if (!isValidTransactionStructure(transaction)) {
         return false;
     }
@@ -176,7 +178,7 @@ exports.validateTransaction = (transaction, aUnspentTxOuts) => {
     return true;
 };
 
-exports.validateBlockTransactions = (aTransactions, aUnspentTxOuts, blockIndex) => {
+const validateBlockTransactions = (aTransactions, aUnspentTxOuts, blockIndex) => {
     const coinbaseTx = aTransactions[0];
     if (!validateCoinbaseTx(coinbaseTx, blockIndex)) {
         console.log('invalid coinbase transaction: ' + JSON.stringify(coinbaseTx));
@@ -201,7 +203,7 @@ exports.validateBlockTransactions = (aTransactions, aUnspentTxOuts, blockIndex) 
 };
 
 
-exports.validateCoinbaseTx = (transaction, blockIndex) => {
+const validateCoinbaseTx = (transaction, blockIndex) => {
     if (transaction == null) {
         console.log('the first transaction in the block must be coinbase transaction');
         return false;
@@ -229,7 +231,7 @@ exports.validateCoinbaseTx = (transaction, blockIndex) => {
     return true;
 };
 
-exports.validateTxIn = (txIn, transaction, aUnspentTxOuts) => {
+const validateTxIn = (txIn, transaction, aUnspentTxOuts) => {
     const referencedUTxOut =
         aUnspentTxOuts.find((uTxO) => uTxO.txOutId === txIn.txOutId && uTxO.txOutIndex === txIn.txOutIndex);
     if (referencedUTxOut == null) {
@@ -248,7 +250,7 @@ exports.validateTxIn = (txIn, transaction, aUnspentTxOuts) => {
 };
 
 
-exports.isValidTxInStructure = (txIn) => {
+const isValidTxInStructure = (txIn) => {
     if (txIn == null) {
         console.log('txIn is null');
         return false;
@@ -266,7 +268,7 @@ exports.isValidTxInStructure = (txIn) => {
     }
 };
 
-exports.isValidTxOutStructure = (txOut) => {
+const isValidTxOutStructure = (txOut) => {
     if (txOut == null) {
         console.log('txOut is null');
         return false;
@@ -284,7 +286,7 @@ exports.isValidTxOutStructure = (txOut) => {
     }
 };
 
-exports.isValidTransactionStructure = (transaction) => {
+const isValidTransactionStructure = (transaction) => {
     if (typeof transaction.id !== 'string') {
         console.log('transactionId missing');
         return false;
@@ -313,7 +315,7 @@ exports.isValidTransactionStructure = (transaction) => {
 };
 
 //valid address is a valid ecdsa public key in the 04 + X-coordinate + Y-coordinate format
-exports.isValidAddress = (address) => {
+const isValidAddress = (address) => {
     if (address.length !== 130) {
         console.log(address);
         console.log('invalid public key length');
@@ -332,7 +334,7 @@ exports.isValidAddress = (address) => {
 /**
  TRANSACTION POOL
  */
-exports.isValidTxForPool = (tx, aTtransactionPool) => {
+const isValidTxForPool = (tx, aTtransactionPool) => {
     const txPoolIns = getTxPoolIns(aTtransactionPool);
 
     const containsTxIn = (txIns, txIn) => {
@@ -349,3 +351,10 @@ exports.isValidTxForPool = (tx, aTtransactionPool) => {
     }
     return true;
 };
+
+module.exports = {
+    hexToBinary, toHexString, getPublicKey,
+    isValidBlockStructure, isValidNewBlock, getAccumulatedDifficulty, isValidTimestamp, hasValidHash, hashMatchesBlockContent, hashMatchesDifficulty, isValidChain, getCurrentTimestamp,
+    validateTransaction, validateBlockTransactions, validateCoinbaseTx, validateTxIn, isValidTxInStructure, isValidTxOutStructure, isValidTransactionStructure, isValidAddress,
+    isValidTxForPool,
+}

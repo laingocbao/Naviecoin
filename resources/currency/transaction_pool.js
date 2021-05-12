@@ -1,5 +1,7 @@
 const _ = require('lodash');
-const {Transaction, TxIn, UnspentTxOut, validateTransaction} = require('./transaction');
+const transaction = require('./transaction');
+const wallet = require('./wallet');
+const blockchain = require('../blockchain/blockchain.js');
 
 let transaction_pool = [];
 
@@ -50,4 +52,10 @@ const getTxPoolIns = (aTransactionPool) => {
         .value();
 };
 
-var exports = module.exports = {addToTransactionPool, getTransactionPool, updateTransactionPool};
+const generateNextBlockByTransactionPool = () => {
+    const coinbaseTx = transaction.getCoinbaseTransaction(wallet.getPublicKeyFromMyWallet(), blockchain.getLatestBlock().index + 1);
+    const blockData = [coinbaseTx].concat(getTransactionPool());
+    return blockchain.generateNextBlockWithData(blockData);
+};
+
+module.exports = {addToTransactionPool, getTransactionPool, updateTransactionPool, generateNextBlockByTransactionPool};
